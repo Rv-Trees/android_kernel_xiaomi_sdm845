@@ -52,15 +52,10 @@
 	b.hs	Done
 .endm
 
-.altmacro
-.macro lz4_decompress_asm_generic	doprfm=1
-LOCAL Lz4_decompress_begin, Decode_token, Get_literal_length
-LOCAL Copy_long_literal_hs_15, Copy_long_literal_loop
-LOCAL Copy_literal_lt_15, Decode_offset_matchlength
-LOCAL Get_long_matchlength, Copy_match_begin
-LOCAL Cond_offset_lt_matchlength, Copy_offset_lt_32
-LOCAL Copy_match_perm, Copy_offset_lt_32_loop
-LOCAL Cond_offset_ge_matchlength, Copy_offset_ge_match_loop
+.text
+.p2align 4
+
+ENTRY(_lz4_decompress_asm)
 	stp     x29, x30, [sp, #-16]!
 	mov     x29, sp
 	stp	x3, x0, [sp, #-16]!		/* push src and dst in stack */
@@ -80,12 +75,10 @@ Lz4_decompress_begin:
 	check_dst_overflow
 	check_src_overflow
 
-.if \doprfm
 	add tmp, x0, #512
 	cmp x2, tmp
 	b.ls Decode_token
 	prfm pstl2strm,[x0,#512]
-.endif
 
 	/* Decode Token Byte: */
 Decode_token:
@@ -209,13 +202,6 @@ Copy_offset_ge_match_loop:
 	cmp	x0, copy_to_ptr
 	b.hi	Copy_offset_ge_match_loop
 	b	Lz4_decompress_begin
-.endm
-
-.text
-.p2align 4
-
-ENTRY(_lz4_decompress_asm)
-	lz4_decompress_asm_generic
 ENDPROC(_lz4_decompress_asm)
 
 Failed:
@@ -273,5 +259,145 @@ Copylength_table:
 .text
 .p2align 4
 ENTRY(_lz4_decompress_asm_noprfm)
-	lz4_decompress_asm_generic	0
+	stp     x29, x30, [sp, #-16]!
+	mov     x29, sp
+	stp	x3, x0, [sp, #-16]!		/* push src and dst in stack */
+	ldr	x3, [x3]				/* x3 = *src_ptr */
+	ldr	x0, [x0]				/* x0 = *dst_ptr */
+	adr	permtable_addr, Permtable
+	adr	cplen_table_addr, Copylength_table
+
+Lz4_decompress_begin_noprfm:
+	/*
+	 * save current dst and src ,ensure when return from asm routine
+	 * current both of "dst" and "src" save good position.
+	 */
+	mov	save_dst, x0
+	mov	save_src, x3
+
+	check_dst_overflow
+	check_src_overflow
+
+	/* Decode Token Byte: */
+Decode_token_noprfm:
+	ldrb	w_tmp, [x3], #1		/* read Token Byte */
+	lsr	literal_length, tmp, #4	/* get literal_length */
+	and	match_length, tmp, #0xf	/* get match_length */
+	add	match_length, match_length, #4	/* match_length >=4 */
+
+	/*
+	 * literal_length <= 14 : no more literal length byte,fllowing zero
+	 * or more bytes are liteal bytes.
+	 */
+	cmp	literal_length, #14
+	b.ls	Copy_literal_lt_15_noprfm
+
+	/*
+	 * literal_length == 15 : more literal length bytes after TokenByte.
+	 * continue decoding more literal length bytes.
+	 */
+Get_literal_length_noprfm:
+	check_src_overflow
+	ldrb	w_tmp, [x3], #1
+	add	literal_length, literal_length, tmp
+	cmp	tmp, #255
+	b.eq	Get_literal_length_noprfm
+
+/* literal copy */
+Copy_long_literal_hs_15_noprfm:
+	mov	copy_from_ptr, x3
+	mov	copy_to_ptr, x0
+	add	x3, x3, literal_length
+	add	x0, x0, literal_length
+	check_dst_overflow
+	check_src_overflow
+
+Copy_long_literal_loop_noprfm:
+	ldr	q0, [copy_from_ptr], #16
+	str	q0, [copy_to_ptr], #16
+
+	cmp	x0, copy_to_ptr
+	b.ls	Decode_offset_matchlength_noprfm
+	b	Copy_long_literal_loop_noprfm
+
+Copy_literal_lt_15_noprfm:
+	ldr q0, [x3]
+	str q0, [x0]
+	add	x3, x3, literal_length
+	add	x0, x0, literal_length
+
+	/* Decode offset and match_length */
+Decode_offset_matchlength_noprfm:
+	ldrh	w_offset, [x3], #2	/* 2Byte:offset bytes */
+	cbz	offset, Failed			/* match_length == 0 is invalid */
+	sub	copy_from_ptr, x0, offset
+	cmp	copy_from_ptr, x1
+	b.lo	Failed
+	mov	copy_to_ptr, x0
+	/*
+	 * set x0 to the end of "match copy";
+	 */
+	add	x0, x0, match_length
+	cmp	match_length, #19
+	b.lo	Copy_match_begin_noprfm
+	/*
+	 * continue decoding more match length bytes.
+	 */
+Get_long_matchlength_noprfm:
+	check_src_overflow
+	ldrb	w_tmp, [x3], #1
+	add	x0, x0, tmp
+	add	match_length, match_length, tmp
+	cmp	tmp, #255
+	b.eq	Get_long_matchlength_noprfm
+	check_dst_overflow
+	/*
+	 * here got the matchlength,start "match copy".
+	 */
+Copy_match_begin_noprfm:
+	cmp	offset , match_length
+	b.hs	Cond_offset_ge_matchlength_noprfm
+
+Cond_offset_lt_matchlength_noprfm:
+	cmp	offset , #32
+	b.hs	Cond_offset_ge_matchlength_noprfm
+
+Copy_offset_lt_32_noprfm:
+	ldr	q1, [copy_from_ptr]
+	add	tmp, permtable_addr, offset, lsl #5
+	ldp	q2, q3, [tmp]
+	tbl	v0.16b, {v1.16b}, v2.16b
+	tbl	v1.16b, {v1.16b}, v3.16b
+	cmp     offset , #16
+	b.lo    Copy_match_perm_noprfm
+	ldp     q0, q1, [copy_from_ptr]
+Copy_match_perm_noprfm:
+	ldrb	w_tmp, [cplen_table_addr, offset]
+	stp	q0, q1, [copy_to_ptr]
+	add	copy_to_ptr, copy_to_ptr, tmp
+	cmp	x0, copy_to_ptr
+	b.ls	Lz4_decompress_begin_noprfm
+Copy_offset_lt_32_loop_noprfm:
+	stp	q0, q1, [copy_to_ptr]
+	add	copy_to_ptr, copy_to_ptr, tmp
+	stp	q0, q1, [copy_to_ptr]
+	add	copy_to_ptr, copy_to_ptr, tmp
+	cmp	x0, copy_to_ptr
+	b.hi	Copy_offset_lt_32_loop_noprfm
+	b	Lz4_decompress_begin_noprfm
+
+/* offset >= match */
+Cond_offset_ge_matchlength_noprfm:
+	ldr	q0, [copy_from_ptr], #16
+	str	q0, [copy_to_ptr], #16
+
+	cmp	x0, copy_to_ptr
+	b.ls	Lz4_decompress_begin_noprfm
+Copy_offset_ge_match_loop_noprfm:
+	ldp	q0, q1, [copy_from_ptr], #32
+	stp	q0, q1, [copy_to_ptr], #32
+
+	cmp	x0, copy_to_ptr
+	b.hi	Copy_offset_ge_match_loop_noprfm
+	b	Lz4_decompress_begin_noprfm
 ENDPROC(_lz4_decompress_asm_noprfm)
