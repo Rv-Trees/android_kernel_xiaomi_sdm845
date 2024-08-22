@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DEFCONFIG="vendor/xiaomi/mi845_defconfig"
-CLANGDIR="/workspace/Rve27/RvClang"
+CLANGDIR="/home/rve/RvClang"
 
 rm -rf out/compile.log
 
@@ -25,7 +25,7 @@ red='\033[0;31m'
 nocol='\033[0m'
 
 rve () {
-make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=0 \
+make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=1 \
 ARCH=arm64 \
 CC="ccache clang" \
 LD=ld.lld \
