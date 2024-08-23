@@ -763,7 +763,7 @@
 
 		trips {
 			low_vbat: low-vbat {
-				temperature = <3200>;
+				temperature = <3000>;
 				hysteresis = <100>;
 				type = "passive";
 			};
@@ -837,7 +837,7 @@
 
 		trips {
 			low_soc: low-soc {
-				temperature = <10>;
+				temperature = <3>;
 				hysteresis = <0>;
 				type = "passive";
 			};
