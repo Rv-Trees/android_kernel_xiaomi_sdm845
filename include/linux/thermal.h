@@ -640,4 +640,6 @@ static inline int thermal_generate_netlink_event(struct thermal_zone_device *tz,
 }
 #endif
 
+int get_sconfig(void);
+
 #endif /* __THERMAL_H__ */
