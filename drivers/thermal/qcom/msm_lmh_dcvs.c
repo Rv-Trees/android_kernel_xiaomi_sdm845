@@ -383,7 +383,7 @@ static int lmh_set_max_limit(int cpu, u32 freq)
 	ret = limits_dcvs_write(hw->affinity, LIMITS_SUB_FN_THERMAL,
 				  LIMITS_FREQ_CAP, max_freq,
 				  (max_freq == U32_MAX) ? 0 : 1, 1);
-	lmh_dcvs_notify(hw);
+	//lmh_dcvs_notify(hw);
 	mutex_unlock(&hw->access_lock);
 
 	return ret;
