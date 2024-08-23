@@ -285,6 +285,9 @@ static int lmh_set_trips(void *data, int low, int high)
 	struct limits_dcvs_hw *hw = (struct limits_dcvs_hw *)data;
 	int ret = 0;
 
+	if( low == INT_MIN ) low = high - 3000;
+	if( high == INT_MAX ) high = low + 3000;
+
 	if (high >= LIMITS_TEMP_HIGH_THRESH_MAX || low < 0) {
 		pr_err("Value out of range low:%d high:%d\n",
 				low, high);
