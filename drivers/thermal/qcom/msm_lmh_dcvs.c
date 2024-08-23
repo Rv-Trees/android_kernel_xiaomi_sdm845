@@ -153,9 +153,9 @@ static unsigned long limits_mitigation_notify(struct limits_dcvs_hw *hw)
 		goto notify_exit;
 	}
 
-	pr_debug("CPU:%d max value read:%lu\n",
-			cpumask_first(&hw->core_map),
-			max_limit);
+	//pr_info("CPU:%d max value read:%lu\n",
+	//		cpumask_first(&hw->core_map),
+	//		max_limit);
 	freq_val = FREQ_KHZ_TO_HZ(max_limit);
 	rcu_read_lock();
 	opp_entry = dev_pm_opp_find_freq_floor(cpu_dev, &freq_val);
@@ -176,8 +176,8 @@ static unsigned long limits_mitigation_notify(struct limits_dcvs_hw *hw)
 
 	sched_update_cpu_freq_min_max(&hw->core_map, 0, max_limit);
 
-	pr_debug("CPU:%d max limit:%lu\n", cpumask_first(&hw->core_map),
-			max_limit);
+	//pr_info("CPU:%d max limit:%lu\n", cpumask_first(&hw->core_map),
+	//		max_limit);
 	trace_lmh_dcvs_freq(cpumask_first(&hw->core_map), max_limit);
 
 notify_exit:
