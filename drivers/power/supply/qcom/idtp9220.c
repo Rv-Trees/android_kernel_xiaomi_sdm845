@@ -392,7 +392,7 @@ static ssize_t chip_vout_store(struct device *dev,
 		return count;
 	}
 
-	di->bus.write(di, REG_VOUT_SET, index);
+	idtp9220_set_vout(di, index);
 
 	return count;
 }
