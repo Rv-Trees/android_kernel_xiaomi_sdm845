@@ -718,7 +718,7 @@ static void idtp9220_chg_detect_work(struct work_struct *work)
 
 	/* Set idtp9220 into sleep mode when usbin */
 	power_supply_get_property(di->usb_psy,
-			POWER_SUPPLY_PROP_PRESENT, &val);
+			POWER_SUPPLY_PROP_ONLINE, &val);
 	if (val.intval) {
 		dev_info(di->dev, "[idt] usb_online:%d set chip disable\n", val.intval);
 		idtp9220_set_enable_mode(di, false);
