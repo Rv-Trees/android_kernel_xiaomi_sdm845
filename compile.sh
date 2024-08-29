@@ -9,7 +9,7 @@ mkdir -p out
 mkdir out/RvKernel
 
 export KBUILD_BUILD_USER=Radika
-export KBUILD_BUILD_HOST=Rve27
+export KBUILD_BUILD_HOST=Rve
 export USE_CCACHE=1
 export PATH="$CLANGDIR/bin:$PATH"
 
