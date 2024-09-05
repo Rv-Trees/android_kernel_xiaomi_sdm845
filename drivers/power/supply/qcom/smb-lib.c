@@ -45,8 +45,8 @@
 				__func__, ##__VA_ARGS__);	\
 	} while (0)
 
-bool skip_thermal = false;
-module_param(skip_thermal, bool, 0644);
+bool disable_thermal = false;
+module_param(disable_thermal, bool, 0644);
 
 static int static_limited_current = 0;
 
@@ -2647,7 +2647,7 @@ static int smblib_therm_charging(struct smb_charger *chg)
 	if (chg->system_temp_level >= MAX_TEMP_LEVEL)
 		return 0;
 	
-	if (skip_thermal) {
+	if (disable_thermal) {
 		temp_level = chg->system_temp_level;
 		chg->system_temp_level = 0;
 	}
@@ -2706,7 +2706,7 @@ static int smblib_therm_charging(struct smb_charger *chg)
 		vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, true, thermal_icl_ua);
 	}
 
-	if (skip_thermal) {
+	if (disable_thermal) {
 		chg->system_temp_level = temp_level;
 	}
 
