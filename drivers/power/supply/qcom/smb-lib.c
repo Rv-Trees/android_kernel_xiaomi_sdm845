@@ -48,20 +48,6 @@
 int disable_thermal = 0;
 module_param(disable_thermal, int, 0644);
 
-static int __init disable_thermal_init(void)
-{
-    pr_info("Module initialized with disable_thermal=%d\n", disable_thermal);
-
-    if (disable_thermal == 1) {
-        pr_info("Thermal charging is disabled (disable_thermal=1)\n");
-    } else {
-        pr_info("Thermal charging is enabled (disable_thermal=0)\n");
-    }
-
-    return 0;
-}
-module_init(disable_thermal_init);
-
 static int static_limited_current = 0;
 
 static bool off_charge_flag;
@@ -2643,8 +2629,6 @@ static int smblib_therm_charging(struct smb_charger *chg)
     int temp_level;
     int rc;
 
-    pr_info("Initial values - disable_thermal: %d, system_temp_level: %d\n", disable_thermal, chg->system_temp_level);
-
     if (chg->system_temp_level >= MAX_TEMP_LEVEL)
         return 0;
 
@@ -2666,13 +2650,9 @@ static int smblib_therm_charging(struct smb_charger *chg)
     if (chg->system_temp_level >= MAX_TEMP_LEVEL)
         return 0;
 
-    // Log for disable_thermal flag
     if (disable_thermal == 1) {
-        pr_info("Thermal charging is disabled (disable_thermal=1)\n");
         temp_level = chg->system_temp_level;
         chg->system_temp_level = 0;
-    } else {
-        pr_info("Thermal charging is enabled (disable_thermal=0)\n");
     }
 
     switch (chg->usb_psy_desc.type) {
@@ -2720,13 +2700,8 @@ static int smblib_therm_charging(struct smb_charger *chg)
     }
 
     if (disable_thermal == 1) {
-        pr_info("Restoring temp_level: %d\n", temp_level);
         chg->system_temp_level = temp_level;
-    } else {
-        pr_info("Thermal charging is enabled (disable_thermal=0)\n");
     }
-
-    pr_info("Final system_temp_level: %d\n", chg->system_temp_level);
 
     return rc;
 }
