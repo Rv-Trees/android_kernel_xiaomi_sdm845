@@ -1631,7 +1631,7 @@ static int z_erofs_vle_normalaccess_readpages(struct file *filp,
 					      unsigned int nr_pages)
 {
 	struct inode *const inode = mapping->host;
-	struct block_device *bdev = inode->i_sb->s_bdev;
+	struct block_device *bdev __maybe_unused = inode->i_sb->s_bdev;
 	struct erofs_sb_info *const sbi = EROFS_I_SB(inode);
 
 	bool sync = __should_decompress_synchronously(sbi, nr_pages);
@@ -1998,7 +1998,7 @@ int z_erofs_map_blocks_iter(struct inode *inode,
 		end = ((u64)lcn-- * clustersize) | logical_cluster_ofs;
 		/* fallthrough */
 	case Z_EROFS_VLE_CLUSTER_TYPE_NONHEAD:
-nonhead:	/* get the correspoinding first chunk */
+__maybe_unused nonhead:	/* get the correspoinding first chunk */
 		err = vle_get_logical_extent_head(&ctx, lcn, &ofs,
 						  &pblk, &map->m_flags);
 		mpage = *mpage_ret;
