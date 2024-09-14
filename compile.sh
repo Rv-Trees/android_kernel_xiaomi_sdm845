@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEFCONFIG="vendor/xiaomi/mi845_defconfig"
+DEFCONFIG="rvkernel-be4_defconfig"
 CLANGDIR="/home/rve/RvClang"
 
 rm -rf out/compile.log
