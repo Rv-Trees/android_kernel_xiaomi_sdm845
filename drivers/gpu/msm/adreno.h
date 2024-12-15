@@ -1,5 +1,5 @@
 /* Copyright (c) 2008-2018,2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -256,7 +256,7 @@ struct adreno_gpudev;
 #define ADRENO_PREEMPT_TIMEOUT 10000
 
 #define PREEMPT_SCRATCH_ADDR(dev, id) \
-	((dev)->preempt.counters.gpuaddr + (id * sizeof(u64)))
+	((dev)->preempt.scratch.gpuaddr + (id * sizeof(u64)))
 
 #define ADRENO_INT_BIT(a, _bit) (((a)->gpucore->gpudev->int_bits) ? \
 		(adreno_get_int(a, _bit) < 0 ? 0 : \
